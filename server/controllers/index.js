@@ -185,7 +185,7 @@ const setName = (req, res) => {
   });
 
   // if error, return it
-  savePromise.catch((err) => res.json({ err }));
+  savePromise.catch(err => res.json({ err }));
 
   return res;
 };
@@ -253,7 +253,7 @@ const updateLast = (req, res) => {
   savePromise.then(() => res.json({ name: lastAdded.name, beds: lastAdded.bedsOwned }));
 
   // if save error, just return an error for now
-  savePromise.catch((err) => res.json({ err }));
+  savePromise.catch(err => res.json({ err }));
 };
 
 // function to handle a request to any non-real resources (404)
@@ -272,7 +272,6 @@ const notFound = (req, res) => {
 };
 
 const createDog = (req, res) => {
-  console.dir('hi');
   // check if the required fields exist
   // normally you would also perform validation
   // to know if the data they sent you was real
@@ -302,7 +301,7 @@ const createDog = (req, res) => {
   });
 
   // if error, return it
-  savePromise.catch((err) => res.json({ err }));
+  savePromise.catch(err => res.json({ err }));
 
   return res;
 };
@@ -311,30 +310,33 @@ const searchDogName = (req, res) => {
   if (!req.query.name) {
     return res.json({ error: 'Name is required to perform a search' });
   }
-  
+
   // Use our Dog's findByName function
   return Dog.findByName(req.query.name, (err, doc) => {
     // errs, handle them
     if (err) {
       return res.json({ err }); // if error, return it
     }
-    
+
     // Give an error if there aren't any matches
     if (!doc) {
       return res.json({ error: 'No dogs found' });
     }
-    
+
 
     // If we found a dog, increase its age and send it back
-    doc.age++;
-    
-    const savePromise = doc.save();
+    const dog = doc;
+    dog.age++;
+
+    const savePromise = dog.save();
 
     // send back the name as a success for now
-    savePromise.then(() => res.json({ name: doc.name, breed: doc.breed, age: doc.age } ));
+    savePromise.then(() => res.json({ name: dog.name, breed: dog.breed, age: dog.age }));
 
     // if save error, just return an error for now
-    savePromise.catch((err) => res.json({ err }));
+    savePromise.catch(() => res.json({ err }));
+
+    return res;
   });
 };
 
