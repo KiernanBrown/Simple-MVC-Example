@@ -3,6 +3,7 @@ const models = require('../models');
 
 // get the Cat model
 const Cat = models.Cat.CatModel;
+const Dog = models.Dog.DogModel;
 
 // default fake data so that we have something to work with until we make a real Cat
 const defaultData = {
@@ -43,6 +44,10 @@ const readAllCats = (req, res, callback) => {
   Cat.find(callback);
 };
 
+// function to find all dogs
+const readAllDogs = (req, res, callback) => {
+  Dog.find(callback);
+};
 
 // function to find a specific cat on request.
 // Express functions always receive the request and the response.
@@ -110,6 +115,25 @@ const hostPage3 = (req, res) => {
     // actually calls index.jade. A second parameter of JSON can be passed
     // into the jade to be used as variables with #{varName}
   res.render('page3');
+};
+
+const hostPage4 = (req, res) => {
+  // res.render takes a name of a page to render.
+  // These must be in the folder you specified as views in your main app.js file
+  // Additionally, you don't need .jade because you registered the
+  // file type in the app.js as jade. Calling res.render('index')
+  // actually calls index.jade. A second parameter of JSON can be passed
+  // into the jade to be used as variables with #{varName}
+  const callback = (err, docs) => {
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+
+    // return success
+    return res.render('page4', { dogs: docs });
+  };
+
+  readAllDogs(req, res, callback);
 };
 
 // function to handle get request to send the name
@@ -247,16 +271,86 @@ const notFound = (req, res) => {
   });
 };
 
+const createDog = (req, res) => {
+  console.dir('hi');
+  // check if the required fields exist
+  // normally you would also perform validation
+  // to know if the data they sent you was real
+  if (!req.body.dogName || !req.body.breed || !req.body.age) {
+    // if not respond with a 400 error
+    // (either through json or a web page depending on the client dev)
+    return res.status(400).json({ error: 'name, breed, and age are all required' });
+  }
+
+  // dummy JSON to insert into database
+  const dogData = {
+    name: req.body.dogName,
+    breed: req.body.breed,
+    age: req.body.age,
+  };
+
+  // Create our new DogModel object
+  const newDog = new Dog(dogData);
+
+  // create new save promise for the database
+  const savePromise = newDog.save();
+
+  savePromise.then(() => {
+    lastAdded = newDog;
+    // return success
+    res.json({ name: lastAdded.name, breed: lastAdded.breed, age: lastAdded.age });
+  });
+
+  // if error, return it
+  savePromise.catch((err) => res.json({ err }));
+
+  return res;
+};
+
+const searchDogName = (req, res) => {
+  if (!req.query.name) {
+    return res.json({ error: 'Name is required to perform a search' });
+  }
+  
+  // Use our Dog's findByName function
+  return Dog.findByName(req.query.name, (err, doc) => {
+    // errs, handle them
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+    
+    // Give an error if there aren't any matches
+    if (!doc) {
+      return res.json({ error: 'No dogs found' });
+    }
+    
+
+    // If we found a dog, increase its age and send it back
+    doc.age++;
+    
+    const savePromise = doc.save();
+
+    // send back the name as a success for now
+    savePromise.then(() => res.json({ name: doc.name, breed: doc.breed, age: doc.age } ));
+
+    // if save error, just return an error for now
+    savePromise.catch((err) => res.json({ err }));
+  });
+};
+
 // export the relevant public controller functions
 module.exports = {
   index: hostIndex,
   page1: hostPage1,
   page2: hostPage2,
   page3: hostPage3,
+  page4: hostPage4,
   readCat,
   getName,
   setName,
   updateLast,
   searchName,
   notFound,
+  createDog,
+  searchDogName,
 };
